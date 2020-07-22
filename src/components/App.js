@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import Friend from './Friend'
 import FriendForm from './FriendForm'
+import formSchema from '../validation/formSchema'
+import axios from 'axios'
+import * as yup from 'yup'
 // 🔥 STEP 1- CHECK THE ENDPOINTS USING POSTMAN OR HTTPIE
 // 🔥 STEP 2- FLESH OUT FriendForm.js
 // 🔥 STEP 3- FLESH THE SCHEMA IN ITS OWN FILE
@@ -50,12 +53,27 @@ export default function App() {
   const getFriends = () => {
     // 🔥 STEP 5- IMPLEMENT! ON SUCCESS PUT FRIENDS IN STATE
     //    helper to [GET] all friends from `http://localhost:4000/friends`
+    axios.get('http://localhost:4000/friends')
+    .then(res => {
+      setFriends(res.data)
+    })
+    .catch(err => {
+      console.log(err)
+    })
   }
 
   const postNewFriend = newFriend => {
     // 🔥 STEP 6- IMPLEMENT! ON SUCCESS ADD NEWLY CREATED FRIEND TO STATE
     //    helper to [POST] `newFriend` to `http://localhost:4000/friends`
     //    and regardless of success or failure, the form should reset
+    axios.post('http://localhost:4000/friends', newFriend)
+    .then(res => {
+      setFriends([ res.data, ...friends])
+      setFormValues(initialFormValues)
+    })
+    .catch(err => {
+      console.log(err)
+    })
   }
 
   //////////////// FORM ACTIONS ////////////////
@@ -72,6 +90,14 @@ export default function App() {
   const checkboxChange = (name, isChecked) => {
     // 🔥 STEP 7- IMPLEMENT!
     //  set a new state for the whole form
+    setFormValues({
+      ...formValues,
+      hobbies: {
+        ...formValues.hobbies,
+        [name]: isChecked,
+      }
+      
+    })
   }
 
   const submit = () => {
@@ -81,8 +107,10 @@ export default function App() {
       role: formValues.role.trim(),
       civil: formValues.civil.trim(),
       // 🔥 STEP 8- WHAT ABOUT HOBBIES?
+      hobbies: Object.keys(formValues.hobbies).filter(hb => formValues.hobbies[hb])
     }
     // 🔥 STEP 9- POST NEW FRIEND USING HELPER
+    postNewFriend(newFriend)
   }
 
   //////////////// SIDE EFFECTS ////////////////
@@ -94,7 +122,10 @@ export default function App() {
 
   useEffect(() => {
     // 🔥 STEP 10- ADJUST THE STATUS OF `disabled` EVERY TIME `formValues` CHANGES
-  }, [])
+    formSchema.isValid(formValues).then(valid => {
+      setDisabled(!valid);
+    })
+  }, [formValues])
 
   return (
     <div className='container'>
